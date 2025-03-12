@@ -1,28 +1,27 @@
+# src/api_client.py
+
 from fastapi import FastAPI
-from src.lfu_cache import LFUCache
+from pydantic import BaseModel
+from typing import List
+
 
 app = FastAPI()
-cache = LFUCache(capacity=3)  # Capacidad limitada de ejemplo
 
-@app.get("/")
-def read_root():
-    return {"message": "¡API funcionando con caché LFU!"}
 
-@app.get("/datos/{item_id}")
-def get_data(item_id: int):
-    # Verificar si el dato ya está en la caché
-    cached_data = cache.get(item_id)
-    if cached_data != -1:
-        return {"source": "cache", "data": cached_data}
+class Message(BaseModel):
+    username:  str
+    content: str
 
-    # Si no está, simular petición a una API externa (aquí solo generamos un dato)
-    data = {
-        "id": item_id,
-        "nombre": f"Elemento {item_id}",
-        "descripcion": "Este es un dato de prueba desde la API."
-    }
 
-    # Guardar en caché
-    cache.put(item_id, data)
+messages: List[Message] = []
 
-    return {"source": "api", "data": data}
+
+@app.post("/send_message/")
+def send_message(msg: Message):
+    messages.append(msg)
+    return {"message": "Mensaje recibido!", "data": msg}
+
+
+@app.get("/get_messages/")
+def get_messages():
+    return messages
